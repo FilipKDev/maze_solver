@@ -1,4 +1,5 @@
 from tkinter import Tk, BOTH, Canvas
+import time
 
 class Window:
     def __init__(self, width, height):
@@ -45,7 +46,7 @@ class Line:
         )
 
 class Cell:
-    def __init__(self, x1, y1, x2, y2, window_instance, cell_colour = "black", has_left_wall = True, has_right_wall = True, has_top_wall = True, has_bottom_wall = True):
+    def __init__(self, window_instance, x1 = None, y1 = None, x2 = None, y2 = None, cell_colour = "black", has_left_wall = True, has_right_wall = True, has_top_wall = True, has_bottom_wall = True):
         self._x1 = x1
         self._y1 = y1
         self._x2 = x2
@@ -56,7 +57,12 @@ class Cell:
         self.has_right_wall = has_right_wall
         self.has_top_wall = has_top_wall
         self.has_bottom_wall = has_bottom_wall
-        self.draw(cell_colour)
+
+        if self.can_draw():
+            self.draw(cell_colour)
+
+    def can_draw(self):
+        return self._x1 and self._y1 and self._x2 and self._y2
 
     def get_centre(self):
         width = (self._x2 - self._x1)
@@ -66,6 +72,8 @@ class Cell:
         return (centre_x, centre_y)
 
     def draw(self, cell_colour):
+        if not self.can_draw():
+            return
         if self.has_left_wall:
             left_wall = Line(Point(self._x1, self._y1), Point(self._x1, self._y2))
             self.win.draw_line(left_wall, cell_colour)
@@ -86,3 +94,42 @@ class Cell:
             self.win.draw_line(Line(Point(cell_centre[0], cell_centre[1]), Point(target_centre[0], target_centre[1])), "grey")
         else:
             self.win.draw_line(Line(Point(cell_centre[0], cell_centre[1]), Point(target_centre[0], target_centre[1])), "red")
+
+class Maze:
+    def __init__(
+            self,
+            start_x,
+            start_y,
+            num_rows,
+            num_cols,
+            cell_size_x,
+            cell_size_y,
+            window_instance,
+    ):
+        self.start_x = start_x
+        self.start_y = start_y
+        self.num_rows = num_rows
+        self.num_cols = num_cols
+        self.cell_size_x = cell_size_x
+        self.cell_size_y = cell_size_y
+        self.win = window_instance
+        self._create_cells()
+
+    def _create_cells(self):
+        for i in range(self.num_cols):
+            for j in range(self.num_rows):
+                self._draw_cell(i, j)
+
+        
+    def _draw_cell(self, i, j):
+        cell_x1 = self.start_x + (i * self.cell_size_x)
+        cell_y1 = self.start_y + (j * self.cell_size_y)
+        cell_x2 = self.start_x + ((i+1) * self.cell_size_x)
+        cell_y2 = self.start_y + ((j+1) * self.cell_size_y)
+
+        Cell(self.win, cell_x1, cell_y1, cell_x2, cell_y2)
+        self._animate()
+
+    def _animate(self):
+        self.win.redraw()
+        time.sleep(0.1)
