@@ -1,17 +1,20 @@
 from window import Window
-from window import Line
-from window import Point
+from window import Cell
 
 def main():
-    win = Window(800, 600)
-    line_1 = Line(Point(10, 10), Point(10, 60))
-    line_2 = Line(Point(10, 10), Point(60, 10))
-    line_3 = Line(Point(60, 10), Point(60, 60))
-    line_4 = Line(Point(60, 60), Point(10, 60))
-    win.draw_line(line_1, "black")
-    win.draw_line(line_2, "red")
-    win.draw_line(line_3, "blue")
-    win.draw_line(line_4, "green")
+    win = Window(960, 540)
+    cell_1 = Cell(100, 100, 200, 200, win, "black", False, True, True, False)
+    cell_2 = Cell(100, 200, 200, 300, win, "black", True, True, False, False)
+    cell_3 = Cell(100, 300, 200, 400, win, "black", True, True, False, False)
+    cell_4 = Cell(100, 400, 200, 500, win, "black", True, False, False, True)
+    cell_1.draw_path(cell_2)
+    cell_2.draw_path(cell_3)
+    cell_3.draw_path(cell_4)
+
+    Cell(200, 100, 300, 200, win, "black", True, False, True, False)
+    Cell(200, 200, 300, 300, win, "black", True, True, False, False)
+    Cell(200, 300, 300, 400, win, "black", True, True, False, False)
+    Cell(200, 400, 300, 500, win, "black", False, True, False, True)
     win.wait_for_close()
 
 main()
