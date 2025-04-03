@@ -36,9 +36,16 @@ class Cell:
         if self.has_left_wall:
             left_wall = Line(Point(self._x1, self._y1), Point(self._x1, self._y2))
             self._win.draw_line(left_wall, cell_colour)
+        else:
+            left_wall = Line(Point(self._x1, self._y1), Point(self._x1, self._y2))
+            self._win.draw_line(left_wall, "white")
+
         if self.has_right_wall:
             right_wall = Line(Point(self._x2, self._y1), Point(self._x2, self._y2))
             self._win.draw_line(right_wall, cell_colour)
+        else:
+            right_wall = Line(Point(self._x2, self._y1), Point(self._x2, self._y2))
+            self._win.draw_line(right_wall, "white")
 
         if self.has_top_wall:
             top_wall = Line(Point(self._x1, self._y1), Point(self._x2, self._y1))
@@ -55,6 +62,8 @@ class Cell:
             self._win.draw_line(bottom_wall, "white")
 
     def draw_path(self, target_cell, undo=False):
+        if self._win is None:
+            return
         cell_centre = self.get_centre()
         target_centre = target_cell.get_centre()
         if undo:
@@ -93,7 +102,7 @@ class Maze:
         if self._win is None:
             return
         self._win.redraw()
-        time.sleep(0.01)
+        time.sleep(0.001)
 
     def _create_cells(self):
         for i in range(self._num_cols):
@@ -130,11 +139,11 @@ class Maze:
         self._cells[i][j].visited = True
         while True:
             to_visit = []
-            if i - 1 >= 0 and not self._cells[i-1][j].visited:
+            if i > 0 and not self._cells[i-1][j].visited:
                 to_visit.append("left")
             if i + 1 < self._num_cols and not self._cells[i+1][j].visited:
                 to_visit.append("right")
-            if j - 1 >= 0 and not self._cells[i][j-1].visited:
+            if j > 0 and not self._cells[i][j-1].visited:
                 to_visit.append("up")
             if j + 1 < self._num_rows and not self._cells[i][j+1].visited:
                 to_visit.append("down")
@@ -145,29 +154,22 @@ class Maze:
             direction = random.randrange(len(to_visit))
             if to_visit[direction] == "left":
                 self._cells[i][j].has_left_wall = False
-                self._draw_cell(i, j)
                 self._cells[i-1][j].has_right_wall = False
-                self._draw_cell(i-1, j)
-                self._cells[i][j].draw_path(self._cells[i-1][j])
                 self._break_walls_r(i-1, j)
             elif to_visit[direction] == "right":
                 self._cells[i][j].has_right_wall = False
-                self._draw_cell(i, j)
                 self._cells[i+1][j].has_left_wall = False
-                self._draw_cell(i+1, j)
-                self._cells[i][j].draw_path(self._cells[i+1][j])
                 self._break_walls_r(i+1, j)
             elif to_visit[direction] == "up":
                 self._cells[i][j].has_top_wall = False
-                self._draw_cell(i, j)
                 self._cells[i][j-1].has_bottom_wall = False
-                self._draw_cell(i, j-1)
-                self._cells[i][j].draw_path(self._cells[i][j-1])
                 self._break_walls_r(i, j-1)
             elif to_visit[direction] == "down":
                 self._cells[i][j].has_bottom_wall = False
-                self._draw_cell(i, j)
                 self._cells[i][j+1].has_top_wall = False
-                self._draw_cell(i, j+1)
-                self._cells[i][j].draw_path(self._cells[i][j+1])
                 self._break_walls_r(i, j+1)
+
+    def _reset_cells_visited(self):
+        for i in range(self._num_cols):
+            for j in range(self._num_rows):
+                self._cells[i][j].visited = False
