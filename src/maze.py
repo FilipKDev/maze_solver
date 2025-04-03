@@ -1,5 +1,6 @@
 from graphics import Line, Point
 import time
+import random
 
 class Cell:
     def __init__(self, window_instance = None):
@@ -13,6 +14,8 @@ class Cell:
         self.has_right_wall = True
         self.has_top_wall = True
         self.has_bottom_wall = True
+
+        self.visited = False
 
     def get_centre(self):
         width = (self._x2 - self._x1)
@@ -69,6 +72,7 @@ class Maze:
             cell_size_x,
             cell_size_y,
             window_instance = None,
+            seed = None
     ):
         self.start_x = start_x
         self.start_y = start_y
@@ -81,6 +85,9 @@ class Maze:
         self._win = window_instance
         self._cells = []
         self._create_cells()
+
+        if seed:
+            random.seed(seed)
 
     def _animate(self):
         if self._win is None:
@@ -98,7 +105,7 @@ class Maze:
             for j in range(self._num_rows):
                 self._draw_cell(i, j)
         
-    def _draw_cell(self, i, j, cell = None):
+    def _draw_cell(self, i, j):
         if self._win is None:
             return
         cell_x1 = self.start_x + (i * self._cell_size_x)
@@ -106,16 +113,61 @@ class Maze:
         cell_x2 = cell_x1 + self._cell_size_x
         cell_y2 = cell_y1 + self._cell_size_y
 
-        if cell is None:
-            Cell(self._win).draw(cell_x1, cell_y1, cell_x2, cell_y2)
-        else:
-            cell.draw(cell_x1, cell_y1, cell_x2, cell_y2)
+        self._cells[i][j].draw(cell_x1, cell_y1, cell_x2, cell_y2)
         self._animate()
 
     def _break_entrance_and_exit(self):
         top_left_cell = self._cells[0][0]
         bottom_right_cell = self._cells[self._num_cols - 1][self._num_rows - 1]
         top_left_cell.has_top_wall = False
-        self._draw_cell(0, 0, top_left_cell)
+        self._draw_cell(0, 0)
         bottom_right_cell.has_bottom_wall = False
-        self._draw_cell(self._num_cols - 1, self._num_rows - 1, bottom_right_cell)
+        self._draw_cell(self._num_cols - 1, self._num_rows - 1)
+
+    def _break_walls_r(self, i, j):
+        if self._cells is None:
+            return
+        self._cells[i][j].visited = True
+        while True:
+            to_visit = []
+            if i - 1 >= 0 and not self._cells[i-1][j].visited:
+                to_visit.append("left")
+            if i + 1 < self._num_cols and not self._cells[i+1][j].visited:
+                to_visit.append("right")
+            if j - 1 >= 0 and not self._cells[i][j-1].visited:
+                to_visit.append("up")
+            if j + 1 < self._num_rows and not self._cells[i][j+1].visited:
+                to_visit.append("down")
+
+            if len(to_visit) == 0:
+                self._draw_cell(i, j)
+                return
+            direction = random.randrange(len(to_visit))
+            if to_visit[direction] == "left":
+                self._cells[i][j].has_left_wall = False
+                self._draw_cell(i, j)
+                self._cells[i-1][j].has_right_wall = False
+                self._draw_cell(i-1, j)
+                self._cells[i][j].draw_path(self._cells[i-1][j])
+                self._break_walls_r(i-1, j)
+            elif to_visit[direction] == "right":
+                self._cells[i][j].has_right_wall = False
+                self._draw_cell(i, j)
+                self._cells[i+1][j].has_left_wall = False
+                self._draw_cell(i+1, j)
+                self._cells[i][j].draw_path(self._cells[i+1][j])
+                self._break_walls_r(i+1, j)
+            elif to_visit[direction] == "up":
+                self._cells[i][j].has_top_wall = False
+                self._draw_cell(i, j)
+                self._cells[i][j-1].has_bottom_wall = False
+                self._draw_cell(i, j-1)
+                self._cells[i][j].draw_path(self._cells[i][j-1])
+                self._break_walls_r(i, j-1)
+            elif to_visit[direction] == "down":
+                self._cells[i][j].has_bottom_wall = False
+                self._draw_cell(i, j)
+                self._cells[i][j+1].has_top_wall = False
+                self._draw_cell(i, j+1)
+                self._cells[i][j].draw_path(self._cells[i][j+1])
+                self._break_walls_r(i, j+1)
