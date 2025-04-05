@@ -67,7 +67,7 @@ class Cell:
         cell_centre = self.get_centre()
         target_centre = target_cell.get_centre()
         if undo:
-            self._win.draw_line(Line(Point(cell_centre[0], cell_centre[1]), Point(target_centre[0], target_centre[1])), "grey")
+            self._win.draw_line(Line(Point(cell_centre[0], cell_centre[1]), Point(target_centre[0], target_centre[1])), "white")
         else:
             self._win.draw_line(Line(Point(cell_centre[0], cell_centre[1]), Point(target_centre[0], target_centre[1])), "red")
 
@@ -102,7 +102,7 @@ class Maze:
         if self._win is None:
             return
         self._win.redraw()
-        time.sleep(0.001)
+        time.sleep(0.00002)
 
     def _create_cells(self):
         for i in range(self._num_cols):
@@ -156,15 +156,15 @@ class Maze:
                 self._cells[i][j].has_left_wall = False
                 self._cells[i-1][j].has_right_wall = False
                 self._break_walls_r(i-1, j)
-            elif to_visit[direction] == "right":
+            if to_visit[direction] == "right":
                 self._cells[i][j].has_right_wall = False
                 self._cells[i+1][j].has_left_wall = False
                 self._break_walls_r(i+1, j)
-            elif to_visit[direction] == "up":
+            if to_visit[direction] == "up":
                 self._cells[i][j].has_top_wall = False
                 self._cells[i][j-1].has_bottom_wall = False
                 self._break_walls_r(i, j-1)
-            elif to_visit[direction] == "down":
+            if to_visit[direction] == "down":
                 self._cells[i][j].has_bottom_wall = False
                 self._cells[i][j+1].has_top_wall = False
                 self._break_walls_r(i, j+1)
@@ -173,3 +173,57 @@ class Maze:
         for i in range(self._num_cols):
             for j in range(self._num_rows):
                 self._cells[i][j].visited = False
+
+    def solve(self):
+        start = Cell(self._win)
+        start.has_left_wall = False
+        start.has_right_wall = False
+        start.has_top_wall = False
+        start.has_bottom_wall = False
+        start.draw(self.start_x, self.start_y - self._cell_size_y, self.start_x + self._cell_size_x, self.start_y)
+        start.draw_path(self._cells[0][0])
+        self._solve_r(0, 0)
+
+    def _solve_r(self, i, j):
+        self._animate()
+        self._cells[i][j].visited = True
+        if i == self._num_cols - 1 and j == self._num_rows - 1:
+            end = Cell(self._win)
+            end.has_left_wall = False
+            end.has_right_wall = False
+            end.has_top_wall = False
+            end.has_bottom_wall = False
+            end_x1 = self.start_x + ((self._num_cols - 1) * self._cell_size_x)
+            end_y1 = self.start_y + ((self._num_rows) * self._cell_size_y)
+            end_x2 = self.start_x + (self._num_cols * self._cell_size_x)
+            end_y2 = self.start_y + ((self._num_rows + 1) * self._cell_size_y)
+            end.draw(end_x1, end_y1, end_x2, end_y2)
+            self._cells[i][j].draw_path(end)
+            return True
+        directions = [(i-1, j), (i+1, j), (i, j-1), (i, j+1)]
+        for direction in directions:
+            col = direction[0]
+            row = direction[1]
+            if 0 <= col < self._num_cols and 0 <= row < self._num_rows:
+                if self._cells[col][row] and not self._cells[col][row].visited:
+                    if col == i - 1 and not self._cells[i][j].has_left_wall:
+                        self._cells[i][j].draw_path(self._cells[col][row])
+                        if self._solve_r(col, row):
+                            return True
+                        self._cells[i][j].draw_path(self._cells[col][row], True)
+                    if col == i + 1 and not self._cells[i][j].has_right_wall:
+                        self._cells[i][j].draw_path(self._cells[col][row])
+                        if self._solve_r(col, row):
+                            return True
+                        self._cells[i][j].draw_path(self._cells[col][row], True)
+                    if row == j - 1 and not self._cells[i][j].has_top_wall:
+                        self._cells[i][j].draw_path(self._cells[col][row])
+                        if self._solve_r(col, row):
+                            return True
+                        self._cells[i][j].draw_path(self._cells[col][row], True)
+                    if row == j + 1 and not self._cells[i][j].has_bottom_wall:
+                        self._cells[i][j].draw_path(self._cells[col][row])
+                        if self._solve_r(col, row):
+                            return True
+                        self._cells[i][j].draw_path(self._cells[col][row], True)
+        return False
